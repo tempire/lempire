@@ -134,47 +134,34 @@
     (one-value
       (select [id] :from [photosets] :where [= [slot-value 'photosets 'title] name]))))
 
+; photoset id from name or id
 (defun photoset-id (identifier)
   (when (integerp identifier) (return-from photoset-id identifier))
   (if (parse-integer identifier :junk-allowed t)
     (parse-integer identifier)
     (photoset-id-from-name identifier)))
 
-(defun photoset-photos (id)
+; all photos from photoset
+(defun photoset-photos (identifier)
   (loop for record in
         (select [id] [medium] [square] :from [photos] :where [= [slot-value 'photos 'photoset]
-                                                                (photoset-id id)])
+                                                                (photoset-id identifier)])
         collect `(
                   :id     ,(first record)
                   :medium ,(second record)
                   :square ,(third record))))
 
+; faces of glen photoset
 (defun faces-of-glen-photos ()
   (photoset-photos "72157618164628634"))
 
+; first value from clsql query
 (defmacro one-value (query)
   `(first (first ,query)))
 
 (clsql:disable-sql-reader-syntax)
 
-;(clsql:disable-sql-reader-syntax)
-
-;(defmacro standard-page ((&key title) &body body)
-  ;`(with-html-output-to-string (*standard-output* nil :prologue t :indent t)
-     ;(:html :xmlns "http://www.w3.org/1999/xhtml"
-            ;:xml\:lang "en"
-            ;:lang "en"
-            ;(:head
-              ;(:meta :http-equiv "Content-Type"
-                     ;:content    "text/html;charset=utf-8")
-              ;(:title ,title)
-              ;(:link :type  "text/css"
-                     ;:rel   "stylesheet"
-                     ;:ref   "/main.css"))
-            ;(:body ,@body))))
-
 ;(clsql:disconnect :database (clsql:find-database "../retro.db"))
-
 ;(clsql:connect "retro.db" :database-type :sqlite3)
 
 ; Creates table
