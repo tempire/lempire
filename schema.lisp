@@ -82,6 +82,7 @@
 
 (def-view-class photosets ()
     ((id
+       :accessor id
        :db-kind :key
        :db-constraints :not-null
        :type (string 20)
@@ -127,7 +128,80 @@
        :type (string 20)))
     (:base-table photosets))
 
+(def-view-class blogs ()
+    ((id
+       :accessor id 
+       :db-kind :key
+       :db-constraints :not-null
+       :type integer
+       :initarg :id)
+     (title
+       :accessor title 
+       :db-constraints :not-null
+       :type (string 100)
+       :initarg :title)
+     (subtitle
+       :accessor subtitle
+       :type (string 255)
+       :initarg :subtitle)
+     (content
+       :accessor content
+       :db-constraints :not-null
+       :type (string 255)
+       :initarg :content)
+     (created-time
+       :accessor created-time
+       :db-constraints :not-null
+       :type integer
+       :initarg :created-time)
+     (timestamp
+       :accessor timestamp
+       :type (string 100)
+       :initarg :timestamp)
+     (location
+       :accessor location
+       :type (string 100)
+       :initarg :location)
+     (tags
+       :accessor tags
+       :db-kind :join
+       :db-info (:join-class blog-tags
+                 :home-key id
+                 :foreign-key blog
+                 :set t)))
+    (:base-table blogs))
+
+(def-view-class blog-tags ()
+    ((id
+       :db-kind :key
+       :db-constraints :not-null
+       :type integer
+       :initarg :id)
+     (name
+       :db-constraints :not-null
+       :accessor name
+       :name (string 50)
+       :initarg :title)
+     (blog
+       :accessor blog
+       :type (string 255)
+       :initarg :blog))
+    (:base-table blog_tags))
+
 (clsql:locally-enable-sql-reader-syntax)
+
+(defmacro one-value (query)
+  `(first (first ,query)))
+
+(defmacro make-db-plist (query)
+  `(multiple-value-bind (results fields)
+    ,query
+    (loop for value in results collect
+      (loop for name in fields append (list
+        (make-keyword name) (pop value))))))
+
+(defun make-keyword (name)
+  (intern (string-upcase name) :keyword))
 
 (defun photoset-id-from-name (name)
   (parse-integer
@@ -143,22 +217,97 @@
 
 ; all photos from photoset
 (defun photoset-photos (identifier)
-  (loop for record in
-        (select [id] [medium] [square] :from [photos] :where [= [slot-value 'photos 'photoset]
-                                                                (photoset-id identifier)])
-        collect `(
-                  :id     ,(first record)
-                  :medium ,(second record)
-                  :square ,(third record))))
+  (make-db-plist
+    (select [id] [medium] [square] :from [photos] :where [= [slot-value 'photos 'photoset]
+                                                            (photoset-id identifier)])))
+
+; one photo
+(defun photo (id)
+  (let ((plist
+       (first (make-db-plist (select [id] [medium] [square] [idx] [photoset] [description] :from [photos] :where [= [slot-value 'photos 'id] id])))))
+    (append plist `(:set ,(photoset (getf plist :photoset))))))
 
 ; faces of glen photoset
 (defun faces-of-glen-photos ()
   (photoset-photos "72157618164628634"))
 
-; first value from clsql query
-(defmacro one-value (query)
-  `(first (first ,query)))
+(defun photoset-count ()
+  (one-value (select [count [*]] :from [photosets])))
 
+(defgeneric url-title (thing)
+            (:documentation "Title formatted for a URL"))
+
+(defmethod url-title ((set photosets)) (title set))
+(defmethod url-title ((set blogs))     (title set))
+
+(defgeneric photo-count (set)
+            (:documentation "Number of photos in photoset"))
+
+(defmethod photo-count ((set photosets))
+  (one-value (select [count [*]] :from [photos] :where
+          [= [slot-value 'photos 'photoset] ])))
+
+(defmethod primary_photo :around ((set photosets))
+  (first (make-db-plist (select [id] [square] [region]
+                         :from [photos]
+                         :where [= [slot-value 'photos 'id] (slot-value set 'primary_photo)]))))
+
+(defun photoset (photoset)
+  (let ((set (first (first (select 'photosets :where [= [slot-value 'photosets 'id] (photoset-id photoset)])))))
+    `(
+      :id ,(id set)
+      :photo-count ,(photo-count set)
+      :url-title ,(url-title set)
+      :title ,(title set)
+      :region ,(getf (primary_photo set) :region)
+      :square ,(getf (primary_photo set) :square))))
+
+(defun photosets ()
+  (loop for set in (select 'photosets) collect `(
+                                                 :id ,(id (first set))
+                                                 :photo-count ,(photo-count (first set))
+                                                 :url-title ,(url-title (first set))
+                                                 :title ,(title (first set))
+                                                 :region ,(getf (primary_photo (first set)) :region)
+                                                 :square ,(getf (primary_photo (first set)) :square))))
+
+;date month_name
+;date year
+
+(defun latest-blog-post ()
+  (let ((post (one-value (select 'blogs :where [and
+                          [= [slot-value 'blogs 'id] [slot-value 'blog-tags 'blog]]
+                          [<> [slot-value 'blog-tags 'name] "hidden"]]
+          :group-by [slot-value 'blogs 'id]
+          :order-by '([created-time] :desc)
+          :limit 1))))
+    (list
+      :title (title post)
+      :timestamp (timestamp post))))
+
+(defun blog-post-tags (blog-id)
+  :documentation "List of tag names associated with blog-id"
+  (loop for name in (select [name] :from [blog-tags] :where [= [slot-value 'blog-tags 'blog] blog-id])
+        append name))
+
+;(query-object 'blogs '(id title url-title tags time-since)) 
+(defun personal-blog-posts ()
+  (loop for post in (select 'blogs
+                            :where [and
+                                     [= [slot-value 'blogs 'id] [slot-value 'blog-tags 'blog]]
+                                     [= [slot-value 'blog-tags 'name] "personal"]
+                                     [<> [slot-value 'blog-tags 'name] "hidden"]]
+                            :group-by [slot-value 'blogs 'id]
+                            :order-by '([created-time] :desc))
+        collect `(
+                  :id ,(id (first post))
+                  :title ,(title (first post))
+                  :url-title ,(url-title (first post))
+                  :subtitle ,(subtitle (first post))
+                  :snippet ,(title (first post))
+                  :tags ,(blog-post-tags (id (first post))))))
+
+;(make-db-plist (select [id] [title] [subtitle]
 (clsql:disable-sql-reader-syntax)
 
 ;(clsql:disconnect :database (clsql:find-database "../retro.db"))

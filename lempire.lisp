@@ -1,14 +1,17 @@
 (in-package #:lempire)
 
-(setf *message-log-pathname* "/tmp/message.log")
-(setf *access-log-pathname* "/tmp/access.log")
+(setf *message-log-pathname*  "/tmp/message.log")
+(setf *access-log-pathname*   "/tmp/access.log")
+(setf *lisp-errors-log-level* :INFO)
 
 (setf *dispatch-table*
   (list
-    (create-regex-dispatcher "^/css"    'css)
-    (create-regex-dispatcher "^/"       'root:index)
-    (create-regex-dispatcher "^/blogs"  'blogs:index)
-    (create-regex-dispatcher "^/photos" 'photos:index)))
+    (create-regex-dispatcher "^/css"          'css)
+    (create-regex-dispatcher "^/$"            'root:index)
+    (create-regex-dispatcher "^/blogs"        'blogs:index)
+    (create-regex-dispatcher "^/photos$"      'photos:index)
+    (create-regex-dispatcher "^/photos/\\d+"  'photos:photo)
+    (create-regex-dispatcher "^/photos/.+"    'photos:photoset)))
 
 ; schema
 (clsql:connect
@@ -16,6 +19,40 @@
   :database-type :sqlite3)
 
 ;(clsql:locally-enable-sql-reader-syntax)
+
+(defun url-parts ()
+  (rest (split "/" (first (split "\\?" (hunchentoot:request-uri*))))))
+
+(defmacro standard-header ()
+  `(htm
+     (:div :id "header"
+      (:img :class "profile" :src "/images/profile_top.png" :alt "Picture of Glen")
+      (:a :class "home" :href "/" :alt "Home")
+      (:ul :class "toc"
+       (:li (:a :href "/blogs" "Blog"))
+       (:li (:a :href "/blogs/tag/tech" "Tech"))
+       (:li (:a :href "/photos" "Photos"))))
+     (:div :id "main"
+      (:div :id "box-top")
+      (:div :id "content"
+       (:div :class "fb_status"
+        (:span :class "load statii" :content "status")
+        (:span :class "time_since")
+        (:span :class "source"))))))
+
+(defmacro standard-footer ()
+  `(htm
+     (:div :id "footer"
+      (:ul
+       (:li (:a :href "http://facebook.co/tempire" "Facebook"))
+       (:li (:a :href "http://flickr.com/photos/tempire" "Flickr"))
+       (:li (:a :href "http://twitter.com/tempiretech" "Twitter"))
+       (:li (:a :href "http://google.com/profiles/glen.hinkle" "Google+"))
+       (:li (:a :href "http://zombiedolphin.com" "Zombie Dolphin"))
+       (:li (:a :href "http://careers.stackoverflow.com/glen" "Resume"))
+       (:li (:a :href "http://github.com/tempire" "Githubs"))
+       (:li (:a :href "http://search.cpan.org/~tempire" "CPAN"))
+       (:li (:a :href "http://mojocasts.com" "Mojocasts"))))))
 
 (defmacro standard-page ((&key title) &body body)
   `(with-html-output-to-string (*standard-output* nil :prologue t :indent 0)
@@ -29,7 +66,10 @@
               (:link :type  "text/css"
                      :rel   "stylesheet"
                      :ref   "/main.css"))
-            (:body ,@body))))
+            (:body
+             (standard-header)
+             ,@body
+             (standard-footer)))))
 
 (defun css ()
   (setf (content-type* *reply*) "text/css")

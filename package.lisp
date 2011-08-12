@@ -3,11 +3,13 @@
 (defpackage #:lempire-schema
   (:use #:cl #:clsql)
   (:documentation "db schema")
-  (:export :faces-of-glen-photos :photoset-photos))
+  (:export
+   :faces-of-glen-photos :photoset-photos :photoset-count :photosets :photoset :photo
+   :latest-blog-post :personal-blog-posts))
 
 (defpackage #:lempire
-  (:use #:cl #:hunchentoot #:cl-who #:parenscript :lempire-schema)
-  (:export :standard-page))
+  (:use #:cl #:hunchentoot #:cl-who #:parenscript :cl-ppcre :lempire-schema)
+  (:export :standard-page :url-parts))
 
 ; controllers
 
@@ -24,4 +26,4 @@
 (defpackage #:photos
   (:use #:cl #:cl-who #:parenscript)
   (:documentation "photos controller")
-  (:export :index))
+  (:export :index :photoset :photo))
