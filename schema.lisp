@@ -234,12 +234,13 @@
 (defun photoset-count ()
   (one-value (select [count [*]] :from [photosets])))
 
+; combined defeneric w/ defmethods
 (defgeneric url-title (thing)
-            (:documentation "Title formatted for a URL"))
+            (:documentation "Title formatted for a URL")
+            (:method ((set photosets)) (title set))
+            (:method ((set blogs))     (title set)))
 
-(defmethod url-title ((set photosets)) (title set))
-(defmethod url-title ((set blogs))     (title set))
-
+; separate defgeneric and defmethods
 (defgeneric photo-count (set)
             (:documentation "Number of photos in photoset"))
 
