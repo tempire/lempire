@@ -1,5 +1,6 @@
 (in-package #:lempire-schema)
 
+;tables
 (def-view-class photos ()
    ((id
       :db-kind :key
@@ -188,6 +189,7 @@
        :initarg :blog))
     (:base-table blog_tags))
 
+; enable [fieldname]/clsql functional syntax
 (clsql:locally-enable-sql-reader-syntax)
 
 (defmacro one-value (query)
@@ -272,8 +274,9 @@
                                                  :region ,(getf (primary_photo (first set)) :region)
                                                  :square ,(getf (primary_photo (first set)) :square))))
 
-;date month_name
-;date year
+; TODO
+; date month_name
+; date year
 
 (defun latest-blog-post ()
   (let ((post (one-value (select 'blogs :where [and
@@ -291,7 +294,6 @@
   (loop for name in (select [name] :from [blog-tags] :where [= [slot-value 'blog-tags 'blog] blog-id])
         append name))
 
-;(query-object 'blogs '(id title url-title tags time-since)) 
 (defun personal-blog-posts ()
   (loop for post in (select 'blogs
                             :where [and
@@ -308,4 +310,6 @@
                   :snippet ,(title (first post))
                   :tags ,(blog-post-tags (id (first post))))))
 
+; leaving [fieldname]/clsql functional syntax enabled
+; causes problem in dev mode
 (clsql:disable-sql-reader-syntax)
