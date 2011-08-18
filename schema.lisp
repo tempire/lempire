@@ -308,22 +308,4 @@
                   :snippet ,(title (first post))
                   :tags ,(blog-post-tags (id (first post))))))
 
-;(make-db-plist (select [id] [title] [subtitle]
 (clsql:disable-sql-reader-syntax)
-
-;(clsql:disconnect :database (clsql:find-database "../retro.db"))
-;(clsql:connect "retro.db" :database-type :sqlite3)
-
-; Creates table
-;(clsql:drop-view-from-class 'employee)
-
-; create clos instance
-;(clsql:create-view-from-class 'photos)
-;(clsql:create-view-from-class 'photosets)
-
-;(defvar e1 (make-instance 'employee
-  ;:id 1
-  ;:fname "Glen Hinkle"
-  ;:company 100))
-
-;(clsql:update-records-from-instance e1)

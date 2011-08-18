@@ -1,5 +1,9 @@
-; models
+; main
+(defpackage #:lempire
+  (:use #:cl #:hunchentoot #:cl-who #:parenscript :cl-ppcre :lempire-schema)
+  (:export :standard-page :url-parts))
 
+; models
 (defpackage #:lempire-schema
   (:use #:cl #:clsql)
   (:documentation "db schema")
@@ -7,12 +11,7 @@
    :faces-of-glen-photos :photoset-photos :photoset-count :photosets :photoset :photo
    :latest-blog-post :personal-blog-posts))
 
-(defpackage #:lempire
-  (:use #:cl #:hunchentoot #:cl-who #:parenscript :cl-ppcre :lempire-schema)
-  (:export :standard-page :url-parts))
-
 ; controllers
-
 (defpackage #:root
   (:use #:cl #:cl-who #:parenscript)
   (:documentation "root controller")

@@ -1,3 +1,5 @@
+; Load all packages for dev environment
+
 (ql:quickload '(clsql hunchentoot css-lite parenscript cl-who))
 
 (let ((dir "/Users/glen/Projects/lisp/lempire/"))

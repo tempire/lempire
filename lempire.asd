@@ -4,6 +4,8 @@
   :serial t
   :depends-on (#:hunchentoot #:cl-who #:parenscript #:clsql #:css-lite)
   :components ((:file "package")
+               (:file "schema")
                (:file "lempire")
                (:file "root")
-               (:file "schema")))
+               (:file "photos")
+               (:file "blogs")))
