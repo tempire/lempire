@@ -295,20 +295,20 @@
         append name))
 
 (defun personal-blog-posts ()
-  (loop for post in (select 'blogs
-                            :where [and
-                                     [= [slot-value 'blogs 'id] [slot-value 'blog-tags 'blog]]
-                                     [= [slot-value 'blog-tags 'name] "personal"]
-                                     [<> [slot-value 'blog-tags 'name] "hidden"]]
-                            :group-by [slot-value 'blogs 'id]
-                            :order-by '([created-time] :desc))
-        collect `(
-                  :id ,(id (first post))
-                  :title ,(title (first post))
-                  :url-title ,(url-title (first post))
-                  :subtitle ,(subtitle (first post))
-                  :snippet ,(title (first post))
-                  :tags ,(blog-post-tags (id (first post))))))
+  (loop for (post . nil) in (select 'blogs
+                                     :where [and
+                                              [= [slot-value 'blogs 'id] [slot-value 'blog-tags 'blog]]
+                                              [= [slot-value 'blog-tags 'name] "personal"]
+                                              [<> [slot-value 'blog-tags 'name] "hidden"]]
+                                     :group-by [slot-value 'blogs 'id]
+                                     :order-by '([created-time] :desc))
+        collect (list
+                  :id (id post)
+                  :title (title post)
+                  :url-title (url-title post)
+                  :subtitle (subtitle post)
+                  :snippet (title post)
+                  :tags (blog-post-tags (id post)))))
 
 ; leaving [fieldname]/clsql functional syntax enabled
 ; causes problem in dev mode

@@ -1,6 +1,6 @@
 ; main
 (defpackage #:lempire
-  (:use #:cl #:hunchentoot #:cl-who #:parenscript :cl-ppcre :lempire-schema)
+  (:use #:cl #:hunchentoot #:cl-who #:parenscript :cl-ppcre)
   (:export :standard-page :url-parts))
 
 ; models

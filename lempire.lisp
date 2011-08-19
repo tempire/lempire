@@ -10,7 +10,8 @@
     (create-regex-dispatcher "^/photos$"      'photos:index)
     (create-regex-dispatcher "^/photos/\\d+"  'photos:photo)
     (create-regex-dispatcher "^/photos/.+"    'photos:photoset)
-    (create-folder-dispatcher-and-handler "/images/" #p"/Users/glen/Projects/lisp/lempire/images/")))  
+    (create-folder-dispatcher-and-handler "/images/" #p"/Users/glen/Projects/lisp/lempire/images/")
+    (create-folder-dispatcher-and-handler "/css/" #p"/Users/glen/Projects/lisp/lempire/css/")))
 
 ; schema
 (clsql:connect
